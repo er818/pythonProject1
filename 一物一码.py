@@ -139,7 +139,7 @@ def query_page(category, data_key):
         st.info("没有找到匹配的记录。显示前10行数据：")
         st.dataframe(df.head(10))
     else:
-        st.dataframe(filtered_df.head(10))  # 展示前10行匹配的数据
+        st.dataframe(filtered_df)  # 展示前10行匹配的数据
 
 
 # 为每个类别创建查询页面的快捷方式
