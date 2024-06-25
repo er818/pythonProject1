@@ -129,6 +129,10 @@ def query_page(category, data_key):
 
     # 过滤数据
     filtered_df = df
+    if selected_data_types:  # 确保用户选择了数据类型
+        filtered_df = filtered_df[filtered_df[data_type_col].isin(selected_data_types)]  # 根据选择的数据类型过滤
+
+    # 应用查询条件
     if query_conditions:
         for col, query in query_conditions.items():
             filtered_df = filtered_df[filtered_df[col].str.contains(query, case=False, na=False)]
@@ -139,8 +143,7 @@ def query_page(category, data_key):
         st.info("没有找到匹配的记录。显示前10行数据：")
         st.dataframe(df.head(10))
     else:
-        st.dataframe(filtered_df)  # 展示前10行匹配的数据
-
+        st.dataframe(filtered_df)
 
 # 为每个类别创建查询页面的快捷方式
 def create_query_pages(categories):
