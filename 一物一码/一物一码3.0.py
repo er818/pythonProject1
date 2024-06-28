@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+from fuzzywuzzy import fuzz
+from fuzzywuzzy import process
 
 # 使用session_state来存储数据和登录状态
 session_data = st.session_state.setdefault("session_data", {
@@ -150,6 +152,118 @@ def create_query_pages(categories):
     return {f"{category} 查询": lambda category=category: query_page(category, category.lower().replace(" ", "_")) for
             category in categories}
 
+# 定义映射页面
+def mapping_page():
+    st.title("映射页面")
+
+    # 上传待映射数据表
+    mapping_file = st.file_uploader("上传待映射数据表：", type=["xlsx", "xls"])
+    if mapping_file is not None:
+        mapping_df = load_data(mapping_file)
+        st.write(f"待映射数据已上传，文件名：{mapping_file.name}，条目数：{len(mapping_df)}")
+    else:
+        st.warning("请上传待映射数据表。")
+        return
+
+    if mapping_df.empty:
+        st.error("上传的待映射数据为空。")
+        return
+
+    # 从已上传的目标数据表中选择一个表
+    target_tables = session_data.get("uploaded_data", {})
+    if not target_tables:
+        st.error("没有可映射的目标数据表，请先上传目标数据表。")
+        return
+
+    target_table_key = st.selectbox("选择目标数据表：", list(target_tables.keys()))
+    target_df = target_tables.get(target_table_key)
+
+    if target_df is None or target_df.empty:
+        st.error("选择的目标数据表为空或未找到。")
+        return
+
+    # 让用户选择待映射数据的编码列和名称列
+    mapping_columns = mapping_df.columns.tolist()
+    selected_mapping_code_column = st.selectbox("选择待映射编码列：", mapping_columns)
+    selected_mapping_name_column = st.selectbox("选择待映射名称列：", [col for col in mapping_columns if col != selected_mapping_code_column])
+
+    # 让用户选择目标数据的编码列和名称列
+    target_columns = target_df.columns.tolist()
+    selected_target_code_column = st.selectbox("选择目标数据编码列：", target_columns)
+    selected_target_name_column = st.selectbox("选择目标数据名称列：", [col for col in target_columns if col != selected_target_code_column])
+
+    # 执行匹配逻辑
+    new_rows = []  # 初始化列表来收集所有行的数据
+
+    for index, row in mapping_df.iterrows():
+        match_type = None
+        match_score = None
+        matched_row = None
+
+        # 尝试名称完全匹配
+        name_exact_match = target_df[target_df[selected_target_name_column] == row[selected_mapping_name_column]]
+
+        if not name_exact_match.empty:
+            match_type = '名称精确匹配'
+            matched_row = name_exact_match.iloc[0]
+        else:
+            # 名称未匹配，尝试编码完全匹配
+            code_exact_match = target_df[target_df[selected_target_code_column] == row[selected_mapping_code_column]]
+            if not code_exact_match.empty:
+                match_type = '编码精确匹配'
+                matched_row = code_exact_match.iloc[0]
+            else:
+                # 编码也未匹配，尝试名称模糊匹配
+                fuzzy_result = process.extractOne(row[selected_mapping_name_column], target_df[selected_target_name_column].astype(str))
+                if fuzzy_result:
+                    match_type = '名称模糊匹配'
+                    match_score = fuzzy_result[1]  # 匹配分数作为阈值
+                    matched_row = target_df[target_df[selected_target_name_column] == fuzzy_result[0]].iloc[0]
+
+        # 将匹配结果或未匹配结果添加到 new_rows 列表
+        new_rows.append({
+            '待映射数据编码': row[selected_mapping_code_column],
+            '待映射数据名称': row[selected_mapping_name_column],
+            '目标表编码': matched_row[selected_target_code_column] if matched_row is not None else None,
+            '目标表名称': matched_row[selected_target_name_column] if matched_row is not None else None,
+            '匹配类型': match_type,
+            '匹配阈值': match_score
+        })
+
+    # 使用列表一次性创建新的 DataFrame
+    mapping_results = pd.DataFrame(new_rows)
+
+    # 显示映射结果
+    if mapping_results.empty:
+        st.write("没有找到匹配的记录。")
+    else:
+        st.write("映射结果：")
+        original_mapping_results = mapping_results.copy()  # 复制原始映射结果以供参考
+
+        # 允许用户通过文本输入修改特定的列
+        for index, row in original_mapping_results.iterrows():
+            st.write(f"行 {index + 1}:")
+            # 为“目标表编码”列创建文本输入框
+            target_code_input = st.text_input("目标表编码:", value=row['目标表编码'], key=f"target_code_{index}")
+            # 为“目标表名称”列创建文本输入框
+            target_name_input = st.text_input("目标表名称:", value=row['目标表名称'], key=f"target_name_{index}")
+
+        # 提交按钮，用于保存编辑后的映射结果
+        submit_changes = st.button("提交更改")
+
+        if submit_changes:
+            # 更新映射结果 DataFrame
+            for index, row in original_mapping_results.iterrows():
+                # 检查是否有输入，如果有则更新
+                if st.session_state.get(f"target_code_{index}", None):
+                    mapping_results.at[index, '目标表编码'] = st.session_state[f"target_code_{index}"]
+                if st.session_state.get(f"target_name_{index}", None):
+                    mapping_results.at[index, '目标表名称'] = st.session_state[f"target_name_{index}"]
+
+            # 显示更新后的映射结果
+            st.write("更新后的映射结果：")
+            st.dataframe(mapping_results)
+
 
 # 主函数
 def main():
@@ -164,19 +278,24 @@ def main():
 
     # 设置侧边栏和页面选择
     with st.sidebar:
+        # 直接创建一个包含所有页面选项的字典
         pages = {
-            **query_pages,  # 添加查询页面选项
+            "映射": mapping_page,
+        }
+        # 将查询页面选项添加到 pages 字典中
+        pages.update(query_pages)  # 使用 update 方法合并字典
+        pages.update({
             "上传管理": upload_management_page,
             "已上传数据信息": uploaded_data_info_page,
-        }
+        })
+
         selected_page = st.radio("选择页面:", list(pages.keys()))
 
     # 根据用户选择显示相应页面
-    if selected_page in query_pages:
-        query_pages[selected_page]()  # 调用查询页面函数
+    if selected_page in pages:
+        pages[selected_page]()  # 调用选中页面的函数
     else:
-        pages[selected_page]()  # 调用其他页面函数
-
+        st.write("页面未找到。")
 
 if __name__ == "__main__":
     main()

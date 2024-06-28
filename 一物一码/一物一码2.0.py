@@ -100,7 +100,6 @@ def query_page(category, data_key):
     # 获取存储的数据表
     df = session_data["uploaded_data"].get(data_key, pd.DataFrame())
 
-    # 检查数据表是否为空
     if df.empty:
         st.error("查询的数据表为空。")
         return
@@ -114,7 +113,6 @@ def query_page(category, data_key):
         st.error(f"数据表中没有找到 '{data_type_col}' 列。")
         return
 
-    # 获取其他列名，排除索引列和“数据类型”列
     other_columns = [col for col in df.columns.tolist() if col != data_type_col]
 
     # 找出包含“名称”的列名，默认选中这些列
@@ -126,12 +124,12 @@ def query_page(category, data_key):
     # 为每个选中的列创建查询条件输入框
     for col in selected_columns:
         query_input = st.text_input(f"输入 {col} 的查询条件：")
-        if query_input:  # 如果用户输入了查询条件
+        if query_input:
             query_conditions[col] = query_input
 
     # 过滤数据
     filtered_df = df
-    if selected_data_types:  # 确保用户选择了数据类型
+    if selected_data_types:
         filtered_df = filtered_df[filtered_df[data_type_col].isin(selected_data_types)]  # 根据选择的数据类型过滤
 
     # 应用查询条件
