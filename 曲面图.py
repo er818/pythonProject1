@@ -51,15 +51,14 @@ def generate_3d_surface(z_matrix, num_points=10):
     ax = fig.add_subplot(111, projection='3d')
     surf = ax.plot_surface(new_x_grid, new_y_grid, new_z_matrix, cmap='Blues')
 
-    # 设置X轴和Y轴的刻度位置和标签
-    ax.set_xticks(new_x)
-    ax.set_xticklabels(new_x)
-    ax.set_yticks(new_y)
-    ax.set_yticklabels(new_y)
+    # 使用原始Z矩阵的尺寸设置X轴和Y轴的网格线数量
+    ax.set_xticks(np.arange(z_matrix.shape[1]))  # X轴网格线数量等于列数
+    ax.set_yticks(np.arange(z_matrix.shape[0]))  # Y轴网格线数量等于行数
 
     # 隐藏X轴和Y轴的坐标标签
     ax.set_xticklabels([])
     ax.set_yticklabels([])
+
     # 绘制颜色条
     plt.colorbar(surf, ax=ax, shrink=0.5, aspect=5)
 
