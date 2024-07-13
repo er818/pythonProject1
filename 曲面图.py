@@ -6,6 +6,9 @@ import string
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import Akima1DInterpolator
 
+# 设置中文字体以支持中文标签显示
+plt.rcParams['font.sans-serif'] = ['SimHei']
+plt.rcParams['axes.unicode_minus'] = False
 
 def read_excel_and_convert_to_matrix(file_path):
     # 读取Excel文件
@@ -39,7 +42,7 @@ def interpolate_surface(z_matrix, num_points=10):
     return new_x, new_y, new_z_matrix
 
 
-def generate_3d_surface(z_matrix, num_points=10, azimuth=30, elevation=30):
+def generate_3d_surface(z_matrix, num_points=10, azimuth=280, elevation=30, x_label='X Axis', y_label='Y Axis', z_label='Z Values'):
     # 插值以增加点的数量
     new_x, new_y, new_z_matrix = interpolate_surface(z_matrix, num_points)
 
@@ -50,6 +53,9 @@ def generate_3d_surface(z_matrix, num_points=10, azimuth=30, elevation=30):
     ax = fig.add_subplot(111, projection='3d')
     surf = ax.plot_surface(new_x_grid, new_y_grid, new_z_matrix, cmap='Blues')
 
+    #设置初始视角
+    ax.view_init(elev=elevation, azim=azimuth)
+
     # 使用原始Z矩阵的尺寸设置X轴和Y轴的网格线数量
     ax.set_xticks(np.arange(z_matrix.shape[1]))  # X轴网格线数量等于列数
     ax.set_yticks(np.arange(z_matrix.shape[0]))  # Y轴网格线数量等于行数
@@ -59,12 +65,17 @@ def generate_3d_surface(z_matrix, num_points=10, azimuth=30, elevation=30):
     ax.set_yticklabels([])
 
     # 绘制颜色条
-    plt.colorbar(surf, ax=ax, shrink=0.5, aspect=5)
+    plt.colorbar(surf, ax=ax, shrink=0.5, aspect=10, pad=0.15)
+
+    # 设置坐标轴标签为用户输入的标题
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    ax.set_zlabel(z_label)
 
     # 设置坐标轴标签
-    ax.set_xlabel('X Axis')
-    ax.set_ylabel('Y Axis')
-    ax.set_zlabel('Z Values')
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    ax.set_zlabel(z_label)
 
     # 隐藏X轴和Y轴的坐标标签
     ax.set_xticklabels([])
@@ -87,9 +98,9 @@ def main():
         # 用户可以调整插入点的数量
         num_points = st.sidebar.slider("调整插入点数量", 1, 20, 10)
 
-        # 初始视角参数
-        initial_azim = 300  # 初始方位角
-        initial_elev = 30 # 初始仰角
+        # 初始视角
+        initial_azim = 280
+        initial_elev = 30
 
         # 用户可以设置视角
         azimuth = st.sidebar.slider("设置方位角(0-360度)", 0, 360, initial_azim)
@@ -103,8 +114,13 @@ def main():
             azimuth = initial_azim
             elevation = initial_elev
 
+        # 用户输入XYZ轴标题
+        x_label = st.sidebar.text_input("X轴标题", value="X Axis")
+        y_label = st.sidebar.text_input("Y轴标题", value="Y Axis")
+        z_label = st.sidebar.text_input("Z轴标题", value="Z Values")
+
         # 生成三维曲面图
-        fig = generate_3d_surface(z_matrix, num_points, azimuth, elevation)
+        fig = generate_3d_surface(z_matrix, num_points, azimuth, elevation, x_label, y_label, z_label)
 
         # 显示图形
         st.pyplot(fig)
