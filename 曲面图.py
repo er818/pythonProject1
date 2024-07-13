@@ -75,7 +75,7 @@ def main():
     st.title('Excel数值矩阵三维曲面图生成器')
 
     # 用户上传Excel文件
-    uploaded_file = st.file_uploader("上传你的Excel文件", type=["xlsx", "xls"])
+    uploaded_file = st.file_uploader("上传你的Excel文件，纯数列矩阵，行为X轴，列为Y轴", type=["xlsx", "xls"])
 
     if uploaded_file is not None:
         # 读取Excel文件并转换为矩阵
