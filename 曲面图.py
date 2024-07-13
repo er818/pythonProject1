@@ -39,14 +39,13 @@ def interpolate_surface(z_matrix, num_points=10):
     return new_x, new_y, new_z_matrix
 
 
-def generate_3d_surface(z_matrix, num_points=10):
+def generate_3d_surface(z_matrix, num_points=10, azimuth=30, elevation=30):
     # 插值以增加点的数量
     new_x, new_y, new_z_matrix = interpolate_surface(z_matrix, num_points)
 
     # 创建网格
     new_x_grid, new_y_grid = np.meshgrid(new_x, new_y)
 
-    # 绘制三维曲面图
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     surf = ax.plot_surface(new_x_grid, new_y_grid, new_z_matrix, cmap='Blues')
@@ -67,6 +66,11 @@ def generate_3d_surface(z_matrix, num_points=10):
     ax.set_ylabel('Y Axis')
     ax.set_zlabel('Z Values')
 
+    # 隐藏X轴和Y轴的坐标标签
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+
+    # 返回图形对象
     return fig
 
 
@@ -83,12 +87,28 @@ def main():
         # 用户可以调整插入点的数量
         num_points = st.sidebar.slider("调整插入点数量", 1, 20, 10)
 
+        # 初始视角参数
+        initial_azim = 300  # 初始方位角
+        initial_elev = 30 # 初始仰角
+
+        # 用户可以设置视角
+        azimuth = st.sidebar.slider("设置方位角(0-360度)", 0, 360, initial_azim)
+        elevation = st.sidebar.slider("设置仰角(-90-90度)", -90, 90, initial_elev)
+
+        # 一键回到初始视角的按钮
+        reset_button = st.button("回到初始视角")
+
+        # 如果用户点击了重置按钮，则重置视角
+        if reset_button:
+            azimuth = initial_azim
+            elevation = initial_elev
+
         # 生成三维曲面图
-        fig = generate_3d_surface(z_matrix, num_points)
+        fig = generate_3d_surface(z_matrix, num_points, azimuth, elevation)
 
         # 显示图形
         st.pyplot(fig)
 
-
+# 确保脚本作为主程序运行时才执行main函数
 if __name__ == '__main__':
     main()
