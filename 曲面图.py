@@ -7,8 +7,10 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import Akima1DInterpolator
 
 # 设置中文字体以支持中文标签显示
-plt.rcParams['font.sans-serif'] = ['SimHei']
-plt.rcParams['axes.unicode_minus'] = False
+st.markdown("""
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+""", unsafe_allow_html=True)
 
 def read_excel_and_convert_to_matrix(file_path):
     # 读取Excel文件
