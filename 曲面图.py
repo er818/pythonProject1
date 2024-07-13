@@ -9,6 +9,10 @@ from scipy.interpolate import Akima1DInterpolator
 # 设置中文字体以支持中文标签显示
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
+# 添加Web字体链接，确保中文可以显示
+st.markdown("""
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+""", unsafe_allow_html=True)
 
 def read_excel_and_convert_to_matrix(file_path):
     # 读取Excel文件
