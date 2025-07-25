@@ -11,7 +11,7 @@ plt.rcParams["font.family"] = ["SimHei", "WenQuanYi Micro Hei", "Heiti TC"]
 plt.rcParams["axes.unicode_minus"] = False
 
 st.set_page_config(
-    page_title="费用预估demo",
+    page_title="医疗数据分析",
     page_icon=":bar_chart:",
     layout="wide"
 )
@@ -212,7 +212,7 @@ with st.sidebar:
 # 4. 主页面 - 统计分析
 # --------------------------
 if st.session_state.merged_df is not None and st.session_state.insurance_config:
-    st.header("费用预估demo")
+    st.header("统计分析")
     fields = st.session_state.fields
     case_key = st.session_state.case_key
     merged_df = st.session_state.merged_df
@@ -277,7 +277,7 @@ if st.session_state.merged_df is not None and st.session_state.insurance_config:
                 query_df = query_df[~has_surgery_condition]
 
         if gender != "全部":
-            gender_field = "性别描述"
+            gender_field = "性别"
             if gender_field in query_df.columns:
                 query_df = query_df[query_df[gender_field] == gender]
             else:
